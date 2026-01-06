@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="ar">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="pragma" content="no-cache" />
+    <meta http-equiv="expires" content="-1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Internet hotspot - Log in</title>
+
+    <!-- QR Library -->
+    <script src="https://unpkg.com/html5-qrcode"></script>
+
+    <!-- ربط ملف الستايل المركزي -->
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+    
+
+    
+    <div class="page">
+        <header class="site-header glass">
+            <!-- هنا يتم اظافة لوكو او حذفة او اظافة اسم /////////////////// -->
+            <!-- <img class="logo" src="img/logo-placeholder.png" alt="Logo" /> -->
+            <h1 class="location">مطعم و مقهئ روزا </h1>
+            <h1 class="site-title">Internet Hotspot</h1>
+            <!-- /////////////////////////////////////////////// -->
+             
+        </header>
+
+        <main class="container">
+            <section class="login-box" aria-labelledby="login-heading">
+                <h2 id="login-heading" class="sr-only">تسجيل الدخول للشبكة</h2>
+
+                <form name="sendin" action="$(link-login-only)" method="post" class="hidden-post-form"
+                    style="display:none">
+                    <input type="hidden" name="username" />
+                    <input type="hidden" name="password" />
+                    <input type="hidden" name="dst" value="$(link-orig)" />
+                    <input type="hidden" name="popup" value="true" />
+                </form>
+
+                <form name="login" action="$(link-login-only)" method="post" $(if chap-id) onSubmit="return doLogin()"
+                    $(endif) class="form">
+                    <input type="hidden" name="dst" value="$(link-orig)" />
+                    <input type="hidden" name="popup" value="true" />
+                    <!-- هنا يتم التعديل علئ الكتابة في صندوق الدخول ////////////////////////////////// -->
+                    <p class="info">
+                        صور الباركود او ادخل الرمز يدوياً
+                    </p>
+                    <!-- /////////////////////////////////////////////////////// -->
+                    <label class="input-wrap" for="username">
+                        <img class="ico" src="img/user.svg" alt="" aria-hidden="true" />
+                        <input id="username" name="username" type="text" placeholder="اسم المستخدم"
+                            autocomplete="username" />
+                    </label>
+
+                    <div class="actions">
+                        <button type="button" class="btn btn-qr" onclick="startScan()" aria-controls="reader">
+                            📷 صور الباركود
+                        </button>
+
+                        <input class="btn btn-submit" type="submit" value="اتصال" />
+                        
+                    </div>
+
+                    <!-- منطقة عرض الكاميرا / QR -->
+                    <div id="reader" class="qr-reader" aria-hidden="true" style="display:none"></div>
+                </form>
+                
+            </section>
+            
+        </main>
+        
+
+        <footer class="site-footer">
+            <button type="submit" class="menu"><a href="" target="_self">منـــــــيو المطعم</a> </button>
+            <div class="btn-loc">
+                <button type="submit"><a href="" target="_self">صفحتنا علئ الانستكرام</a></button>
+                <button type="submit"><a href="" target="_self">  موقعنا علئ الخرائط</a></button>
+                
+            </div>
+            <p>© <span id="year"></span> مزود الشبكة</p>
+        </footer>
+    </div>
+
+    <script>document.getElementById('year').textContent = new Date().getFullYear();</script>
+    <script src="/md5.js"></script>
+    <script>
+        function doLogin() {
+            document.sendin.username.value = document.login.username.value;
+            document.sendin.password.value =
+                hexMD5('$(chap-id)' + document.login.username.value + '$(chap-challenge)');
+            document.sendin.submit();
+            return false;
+        }
+    </script>
+
+    <script>
+        let html5QrCode;
+
+        function startScan() {
+            const reader = document.getElementById("reader");
+            reader.style.display = "block";
+            reader.setAttribute("aria-hidden", "false");
+
+            html5QrCode = new Html5Qrcode("reader");
+
+            html5QrCode.start(
+                { facingMode: "environment" },
+                {
+                    fps: 10,
+                    qrbox: 250
+                },
+                qrCodeMessage => {
+                    document.getElementById("username").value = qrCodeMessage;
+
+                    html5QrCode.stop().then(() => {
+                        reader.style.display = "none";
+                        reader.setAttribute("aria-hidden", "true");
+
+                        // تسجيل دخول تلقائي بعد المسح
+                        setTimeout(() => {
+                            if (typeof doLogin === "function") {
+                                doLogin(); // CHAP
+                            } else {
+                                document.login.submit(); // NO CHAP
+                            }
+                        }, 300);
+                    }).catch(err => {
+                        // تجاهل أو عرض خطأ بسيط في ال console
+                        console.warn("خطأ بإيقاف الكاميرا:", err);
+                    });
+                },
+                errorMessage => {
+                    // تجاهل الأخطاء البسيطة (مثلاً: عدم التعرف على QR)
+                }
+            ).catch(err => {
+                console.error("فشل تشغيل كاميرا QR:", err);
+                // يمكن عرض رسالة للمستخدم هنا إذا رغبت
+            });
+        }
+    </script>
+
+</body>
+
+</html>
